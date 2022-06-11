@@ -53,6 +53,6 @@ productSchema.index({
     }
 })
 
-const Product = mongoose.model('Product', productSchema);
+const Pill = mongoose.model('Pill', productSchema);
 
-module.exports = { Product }
+module.exports = { Pill }

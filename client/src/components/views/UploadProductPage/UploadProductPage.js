@@ -1,140 +1,140 @@
 import React,{useState} from 'react'
-import {Typography, Button, Form, Input} from 'antd';
+import { useDispatch } from "react-redux";
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { Button, Form, Input, Select, } from 'antd';
+import { postPill } from "../../../_actions/pill_actions";
 import FileUpload from '../../utils/FileUpload';
-import Axios from 'axios';
+import ColorList from "./Sections/ColorList";
+import ShapeList from "./Sections/ShapeList";
 
 const {TextArea} = Input;
 
-const Shapes = [
-    {key:1, value : "원형"},
-    {key:2, value : "타원형"},
-    {key:3, value : "장방형"},
-    {key:4, value : "반원형"},
-    {key:5, value : "마름모"},
-    {key:6, value : "삼각형"},
-    {key:7, value : "사각형"},
-    {key:8, value : "오각형"},
-    {key:9, value : "육각형"},
-    {key:10, value : "팔각형"},
-    {key:11, value : "기타"}
-]
-
-const Colors = [
-    {key:1, value : "하양"},
-    {key:2, value : "노랑"},
-    {key:3, value : "주황"},
-    {key:4, value : "분홍"},
-    {key:5, value : "빨강"},
-    {key:6, value : "갈색"},
-    {key:7, value : "연두"},
-    {key:8, value : "초록"},
-    {key:9, value : "청록"},
-    {key:10, value : "파랑"},
-    {key:11, value : "남색"},
-    {key:7, value : "자주"},
-    {key:8, value : "보라"},
-    {key:9, value : "회색"},
-    {key:10, value : "검정"},
-    {key:11, value : "투명"}
-]
-
 function UploadProductPage(props) {
-    const [Title,setTitle] = useState("")
-    const [Description, setDescription] = useState("")
-    const [PTypes,setPTypes] = useState("")
-    const [Shape,setShape] = useState(1)
-    const [Color,setColor] = useState(1)
-    const [Images,setImages] = useState([])
+    const dispatch = useDispatch();
 
-    const titleChangeHandler = (event) => {setTitle(event.currentTarget.value)}
-    const descriptionChangeHandler=(event) => {setDescription(event.currentTarget.value)}
-    const ptypesChangeHandler=(event) => {setPTypes(event.currentTarget.value)}
-    const shapeChangeHandler = (event) => {setShape(event.currentTarget.value)}
-    const colorChangeHandler = (event) => {setColor(event.currentTarget.value)}
-    const updateImages = (newImages) => { setImages(newImages)}
+    const [Images,setImages] = useState([]);
 
+    const updateImages = (newImages) => { setImages(newImages) }
 
-    const submitHandler = (event) => {
-        event.preventDefault();
-        if(!Title || !Description || !PTypes || !Shape || !Color || !Images){
-            return alert("모든 값을 넣어주셔야 합니다.")
-        }    
+    return (
+        <Formik
+            initialValues={{
+                title: '',
+                description: '',
+                ptypes: '',
+                shape: 1,
+                color: 1,
+            }}
 
-        //서버에 채운 값들을 request로 보낸다.
+            validationSchema={Yup.object({
+                title: Yup.string().required('알약 제목을 입력해주세요.'),
+                description: Yup.string().required('알약 설명을 입력해주세요.'),
+                ptypes: Yup.string().required('알약 종류를 입력해주세요.'),
+                shape: Yup.number(),
+                color: Yup.number(),
+            })}
 
-        const body = {
-            //로그인 된 사람의 ID
-            writer: props.user.userData._id,
-            title: Title,
-            description: Description,
-            ptypes: PTypes,
-            shape: Shape,
-            color: Color,
-            images: Images
-        }
+            onSubmit={(values, { setSubmitting }) => {
+                // 이미지는 따로 추가해서 서버에 전달하기
+                dispatch(postPill({...values, images: Images})).then(response => {
+                    if (response.payload.success) {
+                        alert('알약 업로드에 성공 했습니다.')
+                        props.history.push('/')
+                    } else {
+                        alert('알약 업로드에 실패 했습니다.')
+                    }
+                });
 
-
-        Axios.post("/api/product", body)
-        .then(response =>{
-            if (response.data.success){
-                alert('알약 업로드에 성공 했습니다.')
-                props.history.push('/')
-            }else{
-                alert('알약 업로드에 실패 했습니다.')
-            }
-        })
-    }
-
-
-  return (
-    <div style={{maxWidth: '700px', margin: '2rem auto'}}>
-        <div style={{textAlign: 'center', marginBottom: '2rem'}}>
-            <h2>알약 업로드</h2> 
-        </div>
-
-        <Form onSubmit={submitHandler}>
-
-            <FileUpload refreshFunction={updateImages}/>
-
-            <br />
-            <br />
-            <label>이름</label>
-            <Input onChange={titleChangeHandler} value={Title}/>
-            <br />
-            <br />
-            <label>설명</label>
-            <TextArea onChange={descriptionChangeHandler} value={Description}/>
-            <br />
-            <br />
-            <label>효능</label>
-            <TextArea onChange={ptypesChangeHandler} value={PTypes}/>
-            <br />
-            <br />
-            <select onChange={shapeChangeHandler} value={Shape}>
-
-                {Shapes.map(item => (
-                    <option key={item.key} value={item.key}> {item.value} </option>
-                ))}
-                
-            </select>
-            
-            &nbsp;&nbsp; &nbsp;&nbsp;  
-
-            <select onChange={colorChangeHandler} value={Color}>
-
-                {Colors.map(item => (
-                    <option key={item.key} value={item.key}> {item.value} </option>
-                ))}
-                
-            </select>
-            <br />
-            <br />
-            <Button htmlType="submit">
-                확인
-            </Button>
-        </Form>
-    </div>
-  )
+                setSubmitting(false);
+            }}
+        >
+            {props => {
+                const {
+                    values,
+                    touched,
+                    errors,
+                    dirty,
+                    isSubmitting,
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    handleReset,
+                } = props;
+                return (
+                    <div className="app">
+                        <div style={{maxWidth: '700px', margin: '2rem auto'}}>
+                            <div style={{textAlign: 'center', marginBottom: '2rem'}}>
+                                <h2>알약 업로드</h2>
+                            </div>
+                            <Form onSubmit={handleSubmit} autoComplete="off">
+                                <Form.Item>
+                                    <FileUpload refreshFunction={updateImages}/>
+                                </Form.Item>
+                                <Form.Item required label="이름">
+                                    <Input
+                                        id="title"
+                                        type="text"
+                                        placeholder="알약 제목을 입력해주세요."
+                                        value={values.title}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        className={
+                                            errors.title && touched.title ? 'text-input error' : 'text-input'
+                                        }
+                                    />
+                                    {errors.title && touched.title && (
+                                        <div className="input-feedback">{errors.title}</div>
+                                    )}
+                                </Form.Item>
+                                <Form.Item required label="설명">
+                                    <TextArea
+                                        id="description"
+                                        placeholder="알약 설명을 입력해주세요."
+                                        value={values.description}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        className={
+                                            errors.description && touched.description ? 'text-input error' : 'text-input'
+                                        }
+                                    />
+                                    {errors.description && touched.description && (
+                                        <div className="input-feedback">{errors.description}</div>
+                                    )}
+                                </Form.Item>
+                                <Form.Item required label="효능/효과">
+                                    <TextArea
+                                        id="ptypes"
+                                        placeholder="알약 효능을 입력해주세요."
+                                        value={values.ptypes}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        className={
+                                            errors.ptypes && touched.ptypes ? 'text-input error' : 'text-input'
+                                        }
+                                    />
+                                    {errors.ptypes && touched.ptypes && (
+                                        <div className="input-feedback">{errors.ptypes}</div>
+                                    )}
+                                </Form.Item>
+                                <Form.Item required label="Shape">
+                                    <ShapeList onChange={handleChange} />
+                                </Form.Item>
+                                <Form.Item required label="Color">
+                                    <ColorList onChange={handleChange} />
+                                </Form.Item>
+                                <Form.Item>
+                                    <Button onClick={handleSubmit} type="primary" disabled={isSubmitting} htmlType="submit">
+                                        확인
+                                    </Button>
+                                </Form.Item>
+                            </Form>
+                        </div>
+                    </div>
+                );
+            }}
+        </Formik>
+    );
 }
 
 export default UploadProductPage

@@ -1,3 +1,5 @@
+.idea
+
 /node_modules
 /build
 
@@ -12,3 +14,9 @@ yarn-debug.kog*
 yarn-error.log*
 
 .vscode
+
+.env
+
+data/**
+
+Uploads/**
